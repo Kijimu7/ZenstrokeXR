@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:logitech.github.io)",
+      "WebFetch(domain:github.com)",
+      "Bash(python3 -c \"import sys,json; data=json.load\\(sys.stdin\\); print\\(data[0][''text''][:8000]\\)\")",
+      "Bash(node -e \"const fs=require\\(''fs''\\); const d=JSON.parse\\(fs.readFileSync\\(''C:/Users/Saori/.claude/projects/E--VRProjects-ZenstrokeXR/b009800d-c4c0-4e34-ac9a-0b29269399cf/tool-results/toolu_01Gbc9dXsA9sTxhy4pDEd3CJ.json'',''utf8''\\)\\); console.log\\(d[0].text.substring\\(0,10000\\)\\)\")",
+      "Bash(node -e \"const fs=require\\(''fs''\\); const d=JSON.parse\\(fs.readFileSync\\(''C:/Users/Saori/.claude/projects/E--VRProjects-ZenstrokeXR/b009800d-c4c0-4e34-ac9a-0b29269399cf/tool-results/toolu_01Gbc9dXsA9sTxhy4pDEd3CJ.json'',''utf8''\\)\\); console.log\\(d[0].text.substring\\(10000,20000\\)\\)\")",
+      "Bash(node -e \"const fs=require\\(''fs''\\); const d=JSON.parse\\(fs.readFileSync\\(''C:/Users/Saori/.claude/projects/E--VRProjects-ZenstrokeXR/b009800d-c4c0-4e34-ac9a-0b29269399cf/tool-results/toolu_01Gbc9dXsA9sTxhy4pDEd3CJ.json'',''utf8''\\)\\); console.log\\(d[0].text.substring\\(20000,30000\\)\\)\")",
+      "Bash(node -e \"const fs=require\\(''fs''\\); const d=JSON.parse\\(fs.readFileSync\\(''C:/Users/Saori/.claude/projects/E--VRProjects-ZenstrokeXR/b009800d-c4c0-4e34-ac9a-0b29269399cf/tool-results/toolu_01Gbc9dXsA9sTxhy4pDEd3CJ.json'',''utf8''\\)\\); console.log\\(d[0].text.substring\\(30000,40000\\)\\)\")",
+      "Bash(node -e \"const fs=require\\(''fs''\\); const d=JSON.parse\\(fs.readFileSync\\(''C:/Users/Saori/.claude/projects/E--VRProjects-ZenstrokeXR/b009800d-c4c0-4e34-ac9a-0b29269399cf/tool-results/toolu_01Gbc9dXsA9sTxhy4pDEd3CJ.json'',''utf8''\\)\\); console.log\\(d[0].text.substring\\(40000\\)\\)\")",
+      "mcp__unityMCP__manage_scene",
+      "mcp__unityMCP__manage_asset",
+      "mcp__unityMCP__refresh_unity",
+      "mcp__unityMCP__read_console",
+      "mcp__unityMCP__manage_editor",
+      "mcp__unityMCP__batch_execute",
+      "mcp__unityMCP__manage_material",
+      "mcp__unityMCP__manage_components",
+      "mcp__unityMCP__manage_gameobject",
+      "mcp__unityMCP__find_gameobjects"
+    ]
+  }
+}
