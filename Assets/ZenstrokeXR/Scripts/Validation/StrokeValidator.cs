@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using ZenstrokeXR.Lessons;
 
 namespace ZenstrokeXR.Validation
 {
@@ -25,6 +26,15 @@ namespace ZenstrokeXR.Validation
         /// Both inputs are in normalized [0,1] paper coordinates.
         /// </summary>
         public bool ValidateStroke(List<Vector2> drawnPoints, List<Vector2> templatePoints)
+        {
+            return ValidateStroke(drawnPoints, templatePoints, StrokeEndingType.Tome, null);
+        }
+
+        /// <summary>
+        /// Validates a drawn stroke with optional ending evaluation.
+        /// </summary>
+        public bool ValidateStroke(List<Vector2> drawnPoints, List<Vector2> templatePoints,
+            StrokeEndingType expectedEnding, List<float> pressures)
         {
             if (drawnPoints == null || drawnPoints.Count < 2)
             {
@@ -70,12 +80,108 @@ namespace ZenstrokeXR.Validation
             float dirPenalty = (1f - dirSim) * 0.5f; // Map [-1,1] to [1,0] then halve
             float finalScore = dist * (1f - directionWeight) + dirPenalty * directionWeight;
 
+            // Evaluate stroke ending (additive adjustment, clamped)
+            float endingAdj = EvaluateEnding(drawnPoints, expectedEnding, pressures);
+            finalScore += endingAdj;
+
             bool passed = finalScore < passingThreshold;
 
             Log($"Validation: dist={dist:F3}, dirSim={dirSim:F3}, dirPenalty={dirPenalty:F3}, " +
-                $"final={finalScore:F3}, threshold={passingThreshold:F3}, result={( passed ? "PASS" : "FAIL")}");
+                $"endingAdj={endingAdj:F3}, final={finalScore:F3}, threshold={passingThreshold:F3}, " +
+                $"ending={expectedEnding}, result={(passed ? "PASS" : "FAIL")}");
 
             return passed;
+        }
+
+        /// <summary>
+        /// Evaluates how well the user performed the expected stroke ending.
+        /// Analyzes the last 20% of the stroke for velocity and pressure patterns.
+        /// Returns an additive score adjustment clamped to [-0.03, +0.02].
+        /// Negative = bonus (good ending), Positive = penalty (wrong ending).
+        /// </summary>
+        private float EvaluateEnding(List<Vector2> points, StrokeEndingType expected, List<float> pressures)
+        {
+            if (points == null || points.Count < 5) return 0f;
+
+            int totalCount = points.Count;
+            int tailStart = Mathf.Max(0, totalCount - Mathf.CeilToInt(totalCount * 0.2f));
+            int tailCount = totalCount - tailStart;
+            if (tailCount < 2) return 0f;
+
+            // Compute velocity in the tail region
+            float tailVelocitySum = 0f;
+            float earlyVelocitySum = 0f;
+            int earlyCount = Mathf.Max(1, tailStart);
+
+            for (int i = 1; i < tailStart && i < totalCount; i++)
+                earlyVelocitySum += Vector2.Distance(points[i], points[i - 1]);
+            float avgEarlyVelocity = earlyCount > 1 ? earlyVelocitySum / (earlyCount - 1) : 0.01f;
+
+            for (int i = tailStart + 1; i < totalCount; i++)
+                tailVelocitySum += Vector2.Distance(points[i], points[i - 1]);
+            float avgTailVelocity = tailCount > 1 ? tailVelocitySum / (tailCount - 1) : 0f;
+
+            float velocityRatio = avgEarlyVelocity > 0.0001f ? avgTailVelocity / avgEarlyVelocity : 1f;
+
+            // Check for direction change at end (for hane detection)
+            bool hasDirectionChange = false;
+            if (tailCount >= 3)
+            {
+                Vector2 dirBefore = (points[tailStart + 1] - points[tailStart]).normalized;
+                Vector2 dirEnd = (points[totalCount - 1] - points[totalCount - 2]).normalized;
+                float dot = Vector2.Dot(dirBefore, dirEnd);
+                hasDirectionChange = dot < 0.7f; // More than ~45 degree change
+            }
+
+            // Pressure analysis (if available)
+            bool hasPressure = pressures != null && pressures.Count >= totalCount;
+            float pressureDrop = 0f;
+            float pressureMaintained = false ? 0f : 1f; // default
+            if (hasPressure)
+            {
+                int pTailStart = Mathf.Max(0, pressures.Count - Mathf.CeilToInt(pressures.Count * 0.2f));
+                float avgEarlyPressure = 0f;
+                for (int i = 0; i < pTailStart; i++)
+                    avgEarlyPressure += pressures[i];
+                avgEarlyPressure = pTailStart > 0 ? avgEarlyPressure / pTailStart : 1f;
+
+                float avgTailPressure = 0f;
+                for (int i = pTailStart; i < pressures.Count; i++)
+                    avgTailPressure += pressures[i];
+                avgTailPressure = (pressures.Count - pTailStart) > 0
+                    ? avgTailPressure / (pressures.Count - pTailStart) : 1f;
+
+                pressureDrop = avgEarlyPressure - avgTailPressure;
+                pressureMaintained = Mathf.Abs(pressureDrop) < 0.15f ? 1f : 0f;
+            }
+
+            float adj = 0f;
+            switch (expected)
+            {
+                case StrokeEndingType.Tome:
+                    // Good: velocity slows, pressure maintained
+                    if (velocityRatio < 0.6f) adj -= 0.015f; // Bonus for slowing
+                    if (hasPressure && pressureMaintained > 0.5f) adj -= 0.015f; // Bonus for firm stop
+                    break;
+
+                case StrokeEndingType.Hane:
+                    // Good: direction change at end, pressure drops
+                    if (hasDirectionChange) adj -= 0.02f; // Bonus for flick
+                    if (hasPressure && pressureDrop > 0.2f) adj -= 0.01f; // Bonus for pressure release
+                    // Velocity-only fallback (mouse)
+                    if (!hasPressure && velocityRatio > 1.2f) adj -= 0.01f; // Speed up at end = flick
+                    break;
+
+                case StrokeEndingType.Harai:
+                    // Good: gradual pressure decrease
+                    if (hasPressure && pressureDrop > 0.3f) adj -= 0.02f; // Bonus for fade
+                    if (velocityRatio > 0.8f && velocityRatio < 1.5f) adj -= 0.01f; // Smooth finish
+                    // Velocity-only fallback (mouse)
+                    if (!hasPressure && velocityRatio > 0.9f) adj -= 0.01f; // Maintained speed = sweep
+                    break;
+            }
+
+            return Mathf.Clamp(adj, -0.03f, 0.02f);
         }
 
         /// <summary>

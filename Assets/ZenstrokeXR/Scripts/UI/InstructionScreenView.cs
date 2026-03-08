@@ -119,7 +119,21 @@ namespace ZenstrokeXR.UI
 
             UpdateStrokeCounter(strokeIndex, mgr.TotalStrokes);
             UpdateProgressDots(strokeIndex);
-            SetGuidance($"Draw stroke {strokeIndex + 1}");
+
+            string endingHint = "";
+            if (mgr.CurrentKanji != null)
+            {
+                var ending = mgr.CurrentKanji.GetStrokeEnding(strokeIndex);
+                endingHint = ending switch
+                {
+                    StrokeEndingType.Tome => "\nとめ (Tome) - Stop firmly",
+                    StrokeEndingType.Hane => "\nはね (Hane) - Flick at end",
+                    StrokeEndingType.Harai => "\nはらい (Harai) - Fade out gradually",
+                    _ => ""
+                };
+            }
+
+            SetGuidance($"Draw stroke {strokeIndex + 1}{endingHint}");
         }
 
         private void OnValidationResult(bool passed)

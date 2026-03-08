@@ -68,6 +68,7 @@ namespace ZenstrokeXR.Drawing
 
         private Vector3 lastRecordedPoint;
         private int highlightedTemplateIndex = -1;
+        private StrokeEndingType currentExpectedEnding;
 
         [SerializeField] private bool highlightPaperDuringPreview = false;
 
@@ -209,8 +210,10 @@ namespace ZenstrokeXR.Drawing
                 lr.material = templateMaterial;
                 lr.startColor = animationColor;
                 lr.endColor = animationColor;
-                lr.startWidth = width;
-                lr.endWidth = width;
+                var ending = kanji.GetStrokeEnding(s);
+                lr.widthCurve = StrokeEndingCurves.ScaleCurve(
+                    StrokeEndingCurves.GetTemplateCurve(ending), width);
+                lr.widthMultiplier = 1f;
                 lr.positionCount = 0;
                 animationStrokes.Add(lr);
 
@@ -396,11 +399,21 @@ namespace ZenstrokeXR.Drawing
                 return;
             }
 
+            // Apply ending envelope to ink width curve
+            if (activeLineRenderer != null && activeLineRenderer.widthCurve != null)
+            {
+                float baseWidth = Mathf.Lerp(minWidth, maxWidth, 0.5f);
+                activeLineRenderer.widthCurve = StrokeEndingCurves.ApplyEndingToInkCurve(
+                    activeLineRenderer.widthCurve, currentExpectedEnding, baseWidth);
+            }
+
             // Make a copy for validation (Resample modifies in-place)
             var drawnCopy = new List<Vector2>(currentStrokeNormalized);
             var templateCopy = new List<Vector2>(templatePoints);
 
-            bool passed = strokeValidator.ValidateStroke(drawnCopy, templateCopy);
+            bool passed = strokeValidator.ValidateStroke(
+                drawnCopy, templateCopy,
+                currentExpectedEnding, new List<float>(currentStrokePressures));
             mgr.ReportStrokeResult(passed);
 
             // activeLineRenderer is handled by HandleValidationResult
@@ -482,6 +495,12 @@ namespace ZenstrokeXR.Drawing
         private void HandleStrokeStepChanged(int strokeIndex)
         {
             HighlightTemplateStroke(strokeIndex);
+
+            var mgr = KanjiLessonManager.Instance;
+            if (mgr?.CurrentKanji != null)
+                currentExpectedEnding = mgr.CurrentKanji.GetStrokeEnding(strokeIndex);
+            else
+                currentExpectedEnding = StrokeEndingType.Tome;
         }
 
         private void RenderKanjiTemplate(KanjiData kanji)
@@ -496,8 +515,10 @@ namespace ZenstrokeXR.Drawing
                 lr.material = templateMaterial;
                 lr.startColor = templateColor;
                 lr.endColor = templateColor;
-                lr.startWidth = templateWidth;
-                lr.endWidth = templateWidth;
+                var ending = kanji.GetStrokeEnding(s);
+                lr.widthCurve = StrokeEndingCurves.ScaleCurve(
+                    StrokeEndingCurves.GetTemplateCurve(ending), templateWidth);
+                lr.widthMultiplier = 1f;
 
                 lr.positionCount = points.Count;
                 for (int i = 0; i < points.Count; i++)
@@ -513,12 +534,16 @@ namespace ZenstrokeXR.Drawing
 
         private void HighlightTemplateStroke(int strokeIndex)
         {
+            var mgr = KanjiLessonManager.Instance;
+            var kanji = mgr?.CurrentKanji;
+
             for (int i = 0; i < templateStrokes.Count; i++)
             {
                 if (templateStrokes[i] == null) continue;
 
                 bool isActive = (i == strokeIndex);
                 bool isCompleted = (i < strokeIndex);
+                var ending = kanji != null ? kanji.GetStrokeEnding(i) : StrokeEndingType.Tome;
 
                 if (isCompleted)
                 {
@@ -529,15 +554,15 @@ namespace ZenstrokeXR.Drawing
                 {
                     templateStrokes[i].startColor = activeTemplateColor;
                     templateStrokes[i].endColor = activeTemplateColor;
-                    templateStrokes[i].startWidth = templateWidth * 1.5f;
-                    templateStrokes[i].endWidth = templateWidth * 1.5f;
+                    templateStrokes[i].widthCurve = StrokeEndingCurves.ScaleCurve(
+                        StrokeEndingCurves.GetTemplateCurve(ending), templateWidth * 1.5f);
                 }
                 else
                 {
                     templateStrokes[i].startColor = templateColor;
                     templateStrokes[i].endColor = templateColor;
-                    templateStrokes[i].startWidth = templateWidth;
-                    templateStrokes[i].endWidth = templateWidth;
+                    templateStrokes[i].widthCurve = StrokeEndingCurves.ScaleCurve(
+                        StrokeEndingCurves.GetTemplateCurve(ending), templateWidth);
                 }
             }
 

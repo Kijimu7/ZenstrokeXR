@@ -37,6 +37,22 @@ namespace ZenstrokeXR.Lessons
         [JsonProperty("strokes")]
         public List<List<float[]>> Strokes;
 
+        [JsonProperty("stroke_endings")]
+        public List<string> StrokeEndings;
+
+        public StrokeEndingType GetStrokeEnding(int strokeIndex)
+        {
+            if (StrokeEndings == null || strokeIndex < 0 || strokeIndex >= StrokeEndings.Count)
+                return StrokeEndingType.Tome;
+
+            return StrokeEndings[strokeIndex]?.ToLowerInvariant() switch
+            {
+                "hane" => StrokeEndingType.Hane,
+                "harai" => StrokeEndingType.Harai,
+                _ => StrokeEndingType.Tome
+            };
+        }
+
         public List<Vector2> GetStrokePoints(int strokeIndex)
         {
             if (strokeIndex < 0 || strokeIndex >= Strokes.Count)
