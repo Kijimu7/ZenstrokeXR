@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class KanjiMaskTraceValidator : MonoBehaviour
@@ -16,6 +17,8 @@ public class KanjiMaskTraceValidator : MonoBehaviour
     [SerializeField] private float jsonBoundsPadding = 0f;
     [SerializeField] private float liveRequiredCoverage = 0.70f;
     [SerializeField] private float liveRequiredPrecision = 0.80f;
+    [SerializeField] private float completeToNextDelay = 1.0f;
+    private Coroutine pendingSuccessCoroutine;
 
     [Header("Trace Validation")]
     [SerializeField] private float requiredCoverage = 0.60f;
@@ -100,15 +103,23 @@ public class KanjiMaskTraceValidator : MonoBehaviour
             resultText.text = pass ? "Complete" : "Try again";
 
         Debug.Log(pass ? "Trace Complete!" : "Trace Try Again");
+        Debug.Log($"Pass result: {pass}");
 
         if (pass)
         {
+            Debug.Log("Starting success coroutine");
+
+            if (pendingSuccessCoroutine != null)
+                StopCoroutine(pendingSuccessCoroutine);
+
+            pendingSuccessCoroutine = StartCoroutine(CompleteThenNextCoroutine());
+        }
+        else
+        {
             if (strokeDrawer != null)
                 strokeDrawer.ClearAllStrokes();
-
-            if (kanjiAnimator != null)
-                kanjiAnimator.ShowNextKanjiAndPlayAnimation();
         }
+
     }
 
     private Rect GetExpectedKanjiBoundsFromJson()
@@ -276,5 +287,46 @@ public class KanjiMaskTraceValidator : MonoBehaviour
         if (strokeDrawer != null)
             strokeDrawer.ClearAllStrokes();
     }
+
+    public bool IsReadyToValidateByStrokeCount()
+    {
+        if (kanjiManager == null || strokeDrawer == null)
+            return false;
+
+        KanjiEntryData kanjiData = kanjiManager.GetCurrentKanjiData();
+
+        if (kanjiData == null || kanjiData.strokes == null)
+            return false;
+
+        int expectedStrokeCount = kanjiData.strokes.Count;
+        int userStrokeCount = strokeDrawer.GetCompletedStrokeCount();
+
+        Debug.Log($"User strokes: {userStrokeCount} / Expected strokes: {expectedStrokeCount}");
+
+        return userStrokeCount >= expectedStrokeCount;
+    }
+
+    private IEnumerator CompleteThenNextCoroutine()
+    {
+        Debug.Log("Success delay started");
+        Debug.Log($"Waiting for {completeToNextDelay} seconds");
+
+        yield return new WaitForSeconds(completeToNextDelay);
+
+        Debug.Log("Delay finished, moving to next kanji");
+
+        if (strokeDrawer != null)
+            strokeDrawer.ClearAllStrokes();
+
+        if (kanjiAnimator != null)
+            kanjiAnimator.ShowNextKanjiAndPlayAnimation();
+        else
+            Debug.LogError("KanjiAnimator is null.");
+
+        pendingSuccessCoroutine = null;
+    }
+
+
+
 
 }

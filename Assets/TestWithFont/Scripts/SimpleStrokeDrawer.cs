@@ -309,5 +309,16 @@ public class SimpleStrokeDrawer : MaskableGraphic
         endingType = newEndingType;
     }
 
+    public int GetCompletedStrokeCount()
+    {
+        return completedStrokes.Count;
+    }
+
+    public List<List<Vector2>> GetCompletedStrokes()
+    {
+        return new List<List<Vector2>>(completedStrokes);
+    }
+
+
 
 }

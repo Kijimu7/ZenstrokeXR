@@ -42,21 +42,9 @@ public class PaperDrawingSurface : MonoBehaviour, IPointerDownHandler, IDragHand
         {
             strokeDrawer.AddPoint(localPoint);
             Debug.Log($"Drawing: {localPoint}");
-
-            if (kanjiMaskTraceValidator != null)
-            {
-                bool complete = kanjiMaskTraceValidator.IsTraceComplete();
-                Debug.Log($"Live trace complete check: {complete}");
-
-                if (complete)
-                {
-                    isDrawing = false;
-                    strokeDrawer.EndStroke();
-                    kanjiMaskTraceValidator.CompleteTraceNow();
-                }
-            }
         }
     }
+
 
     public void OnPointerUp(PointerEventData eventData)
     {
@@ -69,17 +57,12 @@ public class PaperDrawingSurface : MonoBehaviour, IPointerDownHandler, IDragHand
         if (kanjiMaskTraceValidator == null)
             return;
 
-        bool complete = kanjiMaskTraceValidator.IsTraceComplete();
-
-        if (complete)
+        if (kanjiMaskTraceValidator.IsReadyToValidateByStrokeCount())
         {
-            kanjiMaskTraceValidator.CompleteTraceNow();
-        }
-        else
-        {
-            kanjiMaskTraceValidator.FailTraceNow();
+            kanjiMaskTraceValidator.ValidateTrace();
         }
     }
+
 
     private bool TryGetLocalPoint(PointerEventData eventData, out Vector2 localPoint)
     {

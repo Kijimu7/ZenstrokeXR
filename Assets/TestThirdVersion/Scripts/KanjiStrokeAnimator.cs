@@ -9,6 +9,7 @@ public class KanjiStrokeAnimator : MonoBehaviour
     [SerializeField] private RectTransform paperArea;
     [SerializeField] private SimpleStrokeDrawer strokeDrawer;
 
+
     [SerializeField] private float pointDelay = 0.02f;
     [SerializeField] private float strokeDelay = 0.35f;
 
@@ -45,6 +46,8 @@ public class KanjiStrokeAnimator : MonoBehaviour
 
         PlayAnimation();
     }
+
+
 
     private IEnumerator AnimateCurrentKanji()
     {
