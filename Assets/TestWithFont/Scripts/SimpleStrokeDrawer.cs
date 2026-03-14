@@ -23,6 +23,25 @@ public class SimpleStrokeDrawer : MaskableGraphic
     [SerializeField] private int flattenedStartStampCount = 6;
     [SerializeField] private int taperedStartStampCount = 6;
 
+    [Header("Hane")]
+    [SerializeField] private float haneLiftAmount = 8f;
+
+    [Header("Harai")]
+    [SerializeField] private float haraiSweepAmount = 12f;
+
+    [Header("Tome")]
+    [SerializeField] private float tomePressSizeMultiplier = 1.12f;
+    [SerializeField] private float tomeStopBackAmount = 2f;
+    [SerializeField] private float slowStrokeSizeMultiplier = 1.15f;
+
+    private readonly List<Vector2> rawTracePoints = new List<Vector2>();
+
+    public List<Vector2> GetAllDrawnPoints()
+    {
+        return new List<Vector2>(rawTracePoints);
+    }
+
+
     public enum StrokeEndingType
     {
         Tome,
@@ -40,11 +59,10 @@ public class SimpleStrokeDrawer : MaskableGraphic
     public void BeginStroke(Vector2 point)
     {
         points.Clear();
-        //stampedPoints.Clear();
 
         points.Add(point);
+        rawTracePoints.Add(point);
 
-        // Create thicker press stamps at start
         for (int i = 0; i < startPressStampCount; i++)
         {
             stampedPoints.Add(point);
@@ -58,6 +76,7 @@ public class SimpleStrokeDrawer : MaskableGraphic
         if (points.Count == 0)
         {
             points.Add(point);
+            rawTracePoints.Add(point);
             stampedPoints.Add(point);
             SetVerticesDirty();
             return;
@@ -70,6 +89,7 @@ public class SimpleStrokeDrawer : MaskableGraphic
             return;
 
         points.Add(point);
+        rawTracePoints.Add(point);
 
         int steps = Mathf.Max(1, Mathf.CeilToInt(distance / spacing));
 
@@ -105,12 +125,16 @@ public class SimpleStrokeDrawer : MaskableGraphic
 
         points.Clear();
         stampedPoints.Clear();
+        rawTracePoints.Clear();
 
         foreach (List<Vector2> stroke in completedStrokes)
         {
             for (int i = 0; i < stroke.Count; i++)
             {
-                AddPointToStampedStroke(stroke[i], i == 0);
+                Vector2 point = stroke[i];
+
+                rawTracePoints.Add(point);
+                AddPointToStampedStroke(point, i == 0);
             }
         }
 
@@ -159,6 +183,23 @@ public class SimpleStrokeDrawer : MaskableGraphic
 
             float size = brushSize;
 
+            if (i > 0)
+            {
+                float segmentDistance = Vector2.Distance(stampedPoints[i], stampedPoints[i - 1]);
+                float speedFactor = Mathf.Clamp01(segmentDistance / Mathf.Max(0.0001f, spacing));
+
+                float slowBoost = Mathf.Lerp(slowStrokeSizeMultiplier, 1f, speedFactor);
+                size *= slowBoost;
+            }
+
+            if (endingType == StrokeEndingType.Tome && t > endTaperStart)
+            {
+                float denom = Mathf.Max(0.0001f, 1f - endTaperStart);
+                float endT = (t - endTaperStart) / denom;
+
+                size *= Mathf.Lerp(1f, tomePressSizeMultiplier, endT);
+            }
+
             // Fixed start taper based on stamp count, so it does not change while drawing
             if (i < taperedStartStampCount)
             {
@@ -190,7 +231,33 @@ public class SimpleStrokeDrawer : MaskableGraphic
             }
 
             bool useFlattenedStartShape = i < flattenedStartStampCount;
-            AddBrushStamp(vh, stampedPoints[i], size, color, useFlattenedStartShape);
+            Vector2 drawPoint = stampedPoints[i];
+            if (endingType == StrokeEndingType.Hane && t > endTaperStart)
+            {
+                float denom = Mathf.Max(0.0001f, 1f - endTaperStart);
+                float endT = (t - endTaperStart) / denom;
+
+                Vector2 flickDir = Vector2.up;
+                Vector2 backDir = Vector2.zero;
+
+                if (i > 0)
+                {
+                    Vector2 strokeDir = (stampedPoints[i] - stampedPoints[i - 1]).normalized;
+                    backDir = (stampedPoints[i - 1] - stampedPoints[i]).normalized;
+
+                    if (strokeDir.sqrMagnitude > 0.0001f)
+                    {
+                        flickDir = new Vector2(-strokeDir.y, strokeDir.x).normalized;
+
+                        if (flickDir.y < 0f)
+                            flickDir = -flickDir;
+                    }
+                }
+
+                drawPoint += flickDir * (haneLiftAmount * endT);
+            }
+
+            AddBrushStamp(vh, drawPoint, size, color, useFlattenedStartShape);
         }
     }
 
@@ -232,10 +299,15 @@ public class SimpleStrokeDrawer : MaskableGraphic
     {
         points.Clear();
         stampedPoints.Clear();
+        completedStrokes.Clear();
+        rawTracePoints.Clear();
         SetVerticesDirty();
     }
 
-
+    public void SetEndingType(StrokeEndingType newEndingType)
+    {
+        endingType = newEndingType;
+    }
 
 
 }

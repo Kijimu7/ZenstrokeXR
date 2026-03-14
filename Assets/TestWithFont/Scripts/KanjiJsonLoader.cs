@@ -56,4 +56,5 @@ public class KanjiJsonLoader : MonoBehaviour
 
         return database.levels[levelIndex].kanji[kanjiIndex];
     }
+
 }

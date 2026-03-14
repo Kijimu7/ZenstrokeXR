@@ -7,7 +7,8 @@ public class PaperDrawingSurface : MonoBehaviour, IPointerDownHandler, IDragHand
     [SerializeField] private RectTransform drawingRect;
     [SerializeField] private SimpleStrokeDrawer strokeDrawer;
     [SerializeField] private TMPro.TextMeshProUGUI resultText;
-    [SerializeField] private KanjiStrokeValidator kanjiStrokeValidator;
+    //[SerializeField] private KanjiStrokeValidator kanjiStrokeValidator;
+    [SerializeField] private KanjiMaskTraceValidator kanjiMaskTraceValidator;
 
     private bool isDrawing;
 
@@ -20,9 +21,6 @@ public class PaperDrawingSurface : MonoBehaviour, IPointerDownHandler, IDragHand
     }
     public void OnPointerDown(PointerEventData eventData)
     {
-        if (kanjiStrokeValidator != null && kanjiStrokeValidator.IsKanjiComplete())
-            return;
-
         if (resultText != null)
             resultText.text = "";
 
@@ -37,26 +35,49 @@ public class PaperDrawingSurface : MonoBehaviour, IPointerDownHandler, IDragHand
 
     public void OnDrag(PointerEventData eventData)
     {
-        if (!isDrawing) return;
+        if (!isDrawing)
+            return;
 
         if (TryGetLocalPoint(eventData, out Vector2 localPoint))
         {
             strokeDrawer.AddPoint(localPoint);
             Debug.Log($"Drawing: {localPoint}");
+
+            if (kanjiMaskTraceValidator != null)
+            {
+                bool complete = kanjiMaskTraceValidator.IsTraceComplete();
+                Debug.Log($"Live trace complete check: {complete}");
+
+                if (complete)
+                {
+                    isDrawing = false;
+                    strokeDrawer.EndStroke();
+                    kanjiMaskTraceValidator.CompleteTraceNow();
+                }
+            }
         }
     }
 
     public void OnPointerUp(PointerEventData eventData)
     {
-        if (!isDrawing) return;
+        if (!isDrawing)
+            return;
 
         isDrawing = false;
+        strokeDrawer.EndStroke();
 
-        if (TryGetLocalPoint(eventData, out Vector2 localPoint))
+        if (kanjiMaskTraceValidator == null)
+            return;
+
+        bool complete = kanjiMaskTraceValidator.IsTraceComplete();
+
+        if (complete)
         {
-            strokeDrawer.AddPoint(localPoint);
-            strokeDrawer.EndStroke();
-            Debug.Log($"End Draw: {localPoint}");
+            kanjiMaskTraceValidator.CompleteTraceNow();
+        }
+        else
+        {
+            kanjiMaskTraceValidator.FailTraceNow();
         }
     }
 

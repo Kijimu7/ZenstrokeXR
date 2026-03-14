@@ -29,4 +29,12 @@ public class KanjiFontDisplay : MonoBehaviour
 
         kanjiText.text = character;
     }
+
+    public string GetCurrentKanji()
+    {
+        if (kanjiText == null)
+            return "";
+
+        return kanjiText.text;
+    }
 }
