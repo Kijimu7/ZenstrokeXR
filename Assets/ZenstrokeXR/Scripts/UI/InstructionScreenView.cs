@@ -76,7 +76,7 @@ namespace ZenstrokeXR.UI
             if (mgr == null) return;
 
             mgr.OnLessonLevelChanged += OnLevelChanged;
-            mgr.OnKanjiChanged += OnKanjiChanged;
+            //mgr.OnKanjiChanged += OnKanjiChanged;
             mgr.OnStrokeStepChanged += OnStrokeStepChanged;
             mgr.OnValidationResult += OnValidationResult;
             mgr.OnAllStrokesCompleted += OnAllStrokesCompleted;
@@ -88,7 +88,7 @@ namespace ZenstrokeXR.UI
             if (mgr == null) return;
 
             mgr.OnLessonLevelChanged -= OnLevelChanged;
-            mgr.OnKanjiChanged -= OnKanjiChanged;
+            //mgr.OnKanjiChanged -= OnKanjiChanged;
             mgr.OnStrokeStepChanged -= OnStrokeStepChanged;
             mgr.OnValidationResult -= OnValidationResult;
             mgr.OnAllStrokesCompleted -= OnAllStrokesCompleted;
@@ -102,15 +102,15 @@ namespace ZenstrokeXR.UI
                 levelNameText.text = level.LevelName;
         }
 
-        private void OnKanjiChanged(KanjiData kanji)
-        {
-            if (kanjiCharacterText != null)
-                kanjiCharacterText.text = kanji.Character;
+        //private void OnKanjiChanged(KanjiData kanji)
+        //{
+        //    if (kanjiCharacterText != null)
+        //        kanjiCharacterText.text = kanji.Character;
 
-            UpdateStrokeCounter(0, kanji.StrokeCount);
-            RebuildProgressDots(kanji.StrokeCount);
-            SetGuidance("Draw the first stroke");
-        }
+        //    UpdateStrokeCounter(0, kanji.StrokeCount);
+        //    RebuildProgressDots(kanji.StrokeCount);
+        //    SetGuidance("Draw the first stroke");
+        //}
 
         private void OnStrokeStepChanged(int strokeIndex)
         {

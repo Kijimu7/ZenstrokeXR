@@ -89,7 +89,7 @@ namespace ZenstrokeXR.Drawing
             var mgr = KanjiLessonManager.Instance;
             if (mgr != null)
             {
-                mgr.OnKanjiChanged += HandleKanjiChanged;
+                //mgr.OnKanjiChanged += HandleKanjiChanged;
                 mgr.OnStrokeStepChanged += HandleStrokeStepChanged;
                 mgr.OnValidationResult += HandleValidationResult;
             }
@@ -107,7 +107,7 @@ namespace ZenstrokeXR.Drawing
             var mgr = KanjiLessonManager.Instance;
             if (mgr != null)
             {
-                mgr.OnKanjiChanged -= HandleKanjiChanged;
+                //mgr.OnKanjiChanged -= HandleKanjiChanged;
                 mgr.OnStrokeStepChanged -= HandleStrokeStepChanged;
                 mgr.OnValidationResult -= HandleValidationResult;
             }
@@ -120,11 +120,11 @@ namespace ZenstrokeXR.Drawing
             var mgr = KanjiLessonManager.Instance;
             if (mgr != null)
             {
-                mgr.OnKanjiChanged -= HandleKanjiChanged;
+               // mgr.OnKanjiChanged -= HandleKanjiChanged;
                 mgr.OnStrokeStepChanged -= HandleStrokeStepChanged;
                 mgr.OnValidationResult -= HandleValidationResult;
 
-                mgr.OnKanjiChanged += HandleKanjiChanged;
+               // mgr.OnKanjiChanged += HandleKanjiChanged;
                 mgr.OnStrokeStepChanged += HandleStrokeStepChanged;
                 mgr.OnValidationResult += HandleValidationResult;
             }
@@ -488,8 +488,8 @@ namespace ZenstrokeXR.Drawing
 
             if (kanji == null) return;
 
-            RenderKanjiTemplate(kanji);
-            Log($"Template rendered for {kanji.Character} ({kanji.StrokeCount} strokes)");
+            //RenderKanjiTemplate(kanji);
+            //Log($"Template rendered for {kanji.Character} ({kanji.StrokeCount} strokes)");
         }
 
         private void HandleStrokeStepChanged(int strokeIndex)
@@ -503,34 +503,34 @@ namespace ZenstrokeXR.Drawing
                 currentExpectedEnding = StrokeEndingType.Tome;
         }
 
-        private void RenderKanjiTemplate(KanjiData kanji)
-        {
-            for (int s = 0; s < kanji.StrokeCount; s++)
-            {
-                var points = kanji.GetStrokePoints(s);
-                if (points.Count < 2) continue;
+        //private void RenderKanjiTemplate(KanjiData kanji)
+        //{
+        //    for (int s = 0; s < kanji.StrokeCount; s++)
+        //    {
+        //        var points = kanji.GetStrokePoints(s);
+        //        if (points.Count < 2) continue;
 
-                var lr = GetFromPool();
-                lr.transform.SetParent(templateContainer, false);
-                lr.material = templateMaterial;
-                lr.startColor = templateColor;
-                lr.endColor = templateColor;
-                var ending = kanji.GetStrokeEnding(s);
-                lr.widthCurve = StrokeEndingCurves.ScaleCurve(
-                    StrokeEndingCurves.GetTemplateCurve(ending), templateWidth);
-                lr.widthMultiplier = 1f;
+        //        var lr = GetFromPool();
+        //        lr.transform.SetParent(templateContainer, false);
+        //        lr.material = templateMaterial;
+        //        lr.startColor = templateColor;
+        //        lr.endColor = templateColor;
+        //        var ending = kanji.GetStrokeEnding(s);
+        //        lr.widthCurve = StrokeEndingCurves.ScaleCurve(
+        //            StrokeEndingCurves.GetTemplateCurve(ending), templateWidth);
+        //        lr.widthMultiplier = 1f;
 
-                lr.positionCount = points.Count;
-                for (int i = 0; i < points.Count; i++)
-                {
-                    Vector3 local = drawingSurface.NormalizedToLocal(points[i]);
-                    local.z = -0.0005f; // Slightly behind ink layer
-                    lr.SetPosition(i, local);
-                }
+        //        lr.positionCount = points.Count;
+        //        for (int i = 0; i < points.Count; i++)
+        //        {
+        //            Vector3 local = drawingSurface.NormalizedToLocal(points[i]);
+        //            local.z = -0.0005f; // Slightly behind ink layer
+        //            lr.SetPosition(i, local);
+        //        }
 
-                templateStrokes.Add(lr);
-            }
-        }
+        //        templateStrokes.Add(lr);
+        //    }
+        //}
 
         private void HighlightTemplateStroke(int strokeIndex)
         {

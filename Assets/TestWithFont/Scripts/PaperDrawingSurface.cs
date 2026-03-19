@@ -57,10 +57,10 @@ public class PaperDrawingSurface : MonoBehaviour, IPointerDownHandler, IDragHand
         if (kanjiMaskTraceValidator == null)
             return;
 
-        if (kanjiMaskTraceValidator.IsReadyToValidateByStrokeCount())
-        {
-            kanjiMaskTraceValidator.ValidateTrace();
-        }
+        //if (kanjiMaskTraceValidator.IsReadyToValidateByStrokeCount())
+        //{
+        //    kanjiMaskTraceValidator.ValidateTrace();
+        //}
     }
 
 
