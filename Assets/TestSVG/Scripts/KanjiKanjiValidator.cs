@@ -27,6 +27,9 @@ public class KanjiKanjiValidator : MonoBehaviour
     [Tooltip("Require exact stroke count match")]
     public bool requireExactStrokeCount = true;
 
+    [Header("Rewards")]
+    public KanjiScoreManager scoreManager;
+
     public void CheckCurrentKanji()
     {
         if (templatePlayer == null || mouseTracer == null || lessonController == null)
@@ -123,6 +126,9 @@ public class KanjiKanjiValidator : MonoBehaviour
     {
         if (mouseTracer != null)
             mouseTracer.ClearAllStrokes();
+
+        if (scoreManager != null)
+            scoreManager.AddKanjiPoints();
 
         if (lessonController != null)
             lessonController.MarkCurrentKanjiCompleteAndAdvance();
