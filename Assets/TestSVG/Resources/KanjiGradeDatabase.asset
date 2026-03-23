@@ -13,5 +13,9 @@ MonoBehaviour:
   m_Name: KanjiGradeDatabase
   m_EditorClassIdentifier: Assembly-CSharp::KanjiGradeDatabase
   grades:
-  - gradeName: Grade 1
-    kanjiCharacters: "\u4E00\u4E09\u6728"
+  - gradeName: Level 1
+    kanjiCharacters: "\u4E00\u30CE\u3044\u4E09\u6728"
+    kanjiImages:
+    - {fileID: 21300000, guid: 7c575e0a541d8e545bd05c27881e6f0f, type: 3}
+    - {fileID: 21300000, guid: d86610cdddb364c4cbd30e2c21143658, type: 3}
+    - {fileID: 21300000, guid: c3bce15c925806f4097c4d161ac0afc5, type: 3}

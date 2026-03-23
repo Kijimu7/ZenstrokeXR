@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class KanjiLessonController : MonoBehaviour
 {
@@ -8,6 +9,10 @@ public class KanjiLessonController : MonoBehaviour
     // public KanjiVGStrokePlayer strokePlayer;
     public KanjiVGStrokePlayer templatePlayer;
     public KanjiVGStrokePlayer instructionPlayer;
+    public Image kanjiImageUI;
+
+
+
 
     [Header("Lesson State")]
     [Tooltip("0 = first grade entry in the ScriptableObject")]
@@ -72,8 +77,23 @@ public class KanjiLessonController : MonoBehaviour
             return;
 
         currentKanjiCharacter = currentGradeKanji[currentKanjiIndex];
-        currentSvgFileName = KanjiToSvgFileName(currentKanjiCharacter);
 
+        currentSvgFileName = KanjiToSvgFileName(currentKanjiCharacter);
+        if (kanjiImageUI != null && gradeDatabase != null)
+        {
+            Sprite sprite = gradeDatabase.GetKanjiImage(currentKanjiCharacter);
+
+            if (sprite != null)
+            {
+                kanjiImageUI.sprite = sprite;
+                kanjiImageUI.enabled = true;
+            }
+            else
+            {
+                kanjiImageUI.sprite = null;
+                kanjiImageUI.enabled = false;
+            }
+        }
         Debug.Log($"Loading kanji {currentKanjiCharacter} -> {currentSvgFileName}");
 
         if (templatePlayer != null)

@@ -8,6 +8,17 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
+  - enabled: 1
+    path: Assets/Scenes/StartScene.unity
+    guid: 17c015084a8227a43b0ebf757d872999
+  - enabled: 1
+    path: Assets/Scenes/TestSVGScene.unity
+    guid: 727785adef5d6834e88fdc3dfe2c8fb0
+  - enabled: 1
+    path: Assets/Scenes/KanjiTrace.unity
+    guid: c4b8c30b957e0dc478b91c42c8caf771
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+    com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 45d40a92e7fb65f4fbc0da4a186aabbc, type: 2}
+    com.unity.xr.openxr.settings4: {fileID: 11400000, guid: 8ccdb8869899e2446b5efcf861e56e28, type: 2}
   m_UseUCBPForAssetBundles: 0

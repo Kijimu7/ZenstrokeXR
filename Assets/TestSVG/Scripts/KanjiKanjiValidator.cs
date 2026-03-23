@@ -13,6 +13,8 @@ public class KanjiKanjiValidator : MonoBehaviour
     public KanjiMouseTracer mouseTracer;
     [Header("Feedback UI")]
     public TMP_Text feedbackText;
+    [SerializeField] private WorldSpaceCoinFly3D coinSystem;
+    public FloatingFadeText plusText;
 
     [Header("Validation")]
     [Range(8, 128)]
@@ -30,6 +32,13 @@ public class KanjiKanjiValidator : MonoBehaviour
     [Header("Rewards")]
     public KanjiScoreManager scoreManager;
 
+    //public void Awake()
+    //{
+    //    if(plusText != null)
+    //    {
+    //        plusText.text = "";
+    //    }
+    //}
     public void CheckCurrentKanji()
     {
         if (templatePlayer == null || mouseTracer == null || lessonController == null)
@@ -101,6 +110,8 @@ public class KanjiKanjiValidator : MonoBehaviour
      
         Debug.Log("Complete!");
         ShowFeedback("Complete!", Color.green);
+        coinSystem.PlayBurst();
+        plusText.ShowText("+10");
         CompleteCurrentKanji();
     }
 
