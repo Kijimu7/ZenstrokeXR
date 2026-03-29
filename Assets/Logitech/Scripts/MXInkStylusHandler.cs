@@ -15,11 +15,21 @@ public class MXInkStylusHandler : MonoBehaviour
     public Color doubleTapActiveColor = Color.cyan;
     public Color defaultColor = Color.white;
 
-    private StylusInputs stylus;
-    private LineRenderer currentLine;
-    private bool isDrawing;
-    
-    // Defined action names.
+    [Header("Debug")]
+    public bool enableDebugLogs = true;
+
+    [SerializeField] private StylusInputs stylus;
+
+    // Public getters for KanjiStylusTracer
+    public bool IsStylusActive => stylus.isActive;
+    public float TipValue => stylus.tipValue;
+    public Pose InkingPose => stylus.inkingPose;
+    public bool FrontPressed => stylus.clusterFrontValue;
+    public bool BackPressed => stylus.clusterBackValue;
+    public bool MiddlePressed => stylus.clusterMiddleValue > 0.01f;
+    public bool IsOnRightHand => stylus.isOnRightHand;
+
+    // Defined action names
     private const string MX_Ink_Pose_Right = "aim_right";
     private const string MX_Ink_Pose_Left = "aim_left";
     private const string MX_Ink_TipForce = "tip";
@@ -30,107 +40,132 @@ public class MXInkStylusHandler : MonoBehaviour
     private const string MX_Ink_ClusterFront_DoubleTap = "front_double_tap";
     private const string MX_Ink_Docked = "docked";
     private const string MX_Ink_Haptic_Pulse = "haptic_pulse";
+
     private float hapticClickDuration = 0.011f;
     private float hapticClickAmplitude = 1.0f;
 
-    public bool IsStylusActive => stylus.isActive;
-    public float TipValue => stylus.tipValue;
-    public Pose InkingPose => stylus.inkingPose;
-    public bool FrontPressed => stylus.clusterFrontValue;
-    public bool BackPressed => stylus.clusterBackValue;
-    public bool MiddlePressed => stylus.clusterMiddleValue > 0.01f;
+    private void Awake()
+    {
 
+    }
 
     private void UpdatePose()
     {
         var leftDevice = OVRPlugin.GetCurrentInteractionProfileName(OVRPlugin.Hand.HandLeft);
         var rightDevice = OVRPlugin.GetCurrentInteractionProfileName(OVRPlugin.Hand.HandRight);
 
-        bool stylusIsOnLeftHand = leftDevice.Contains("logitech");
-        bool stylusIsOnRightHand = rightDevice.Contains("logitech");
+        bool stylusIsOnLeftHand = !string.IsNullOrEmpty(leftDevice) && leftDevice.Contains("logitech");
+        bool stylusIsOnRightHand = !string.IsNullOrEmpty(rightDevice) && rightDevice.Contains("logitech");
 
         stylus.isActive = stylusIsOnLeftHand || stylusIsOnRightHand;
         stylus.isOnRightHand = stylusIsOnRightHand;
-        
+
         string MX_Ink_Pose = stylus.isOnRightHand ? MX_Ink_Pose_Right : MX_Ink_Pose_Left;
 
-        mxInkModel.SetActive(stylus.isActive);
-        rightController.SetActive(!stylus.isOnRightHand || !stylus.isActive);
-        leftController.SetActive(stylus.isOnRightHand || !stylus.isActive);
+        if (mxInkModel != null)
+            mxInkModel.SetActive(stylus.isActive);
+
+        if (rightController != null)
+            rightController.SetActive(!stylus.isOnRightHand || !stylus.isActive);
+
+        if (leftController != null)
+            leftController.SetActive(stylus.isOnRightHand || !stylus.isActive);
 
         if (OVRPlugin.GetActionStatePose(MX_Ink_Pose, out OVRPlugin.Posef handPose))
         {
             transform.localPosition = handPose.Position.FromFlippedZVector3f();
             transform.localRotation = handPose.Orientation.FromFlippedZQuatf();
-            stylus.inkingPose.position = transform.localPosition;
-            stylus.inkingPose.rotation = transform.localRotation;
+
+            // IMPORTANT: store WORLD pose for external raycasting
+            stylus.inkingPose.position = transform.position;
+            stylus.inkingPose.rotation = transform.rotation;
         }
     }
 
-    void Update()
+    private void Update()
     {
         OVRInput.Update();
         UpdatePose();
 
         if (!OVRPlugin.GetActionStateFloat(MX_Ink_TipForce, out stylus.tipValue))
         {
-            Debug.LogError($"MX_Ink: Error getting action name: {MX_Ink_TipForce}");
+            if (enableDebugLogs)
+                Debug.LogError($"MX_Ink: Error getting action name: {MX_Ink_TipForce}");
         }
 
         if (!OVRPlugin.GetActionStateFloat(MX_Ink_MiddleForce, out stylus.clusterMiddleValue))
         {
-            Debug.LogError($"MX_Ink: Error getting action name: {MX_Ink_MiddleForce}");
+            if (enableDebugLogs)
+                Debug.LogError($"MX_Ink: Error getting action name: {MX_Ink_MiddleForce}");
         }
 
         if (!OVRPlugin.GetActionStateBoolean(MX_Ink_ClusterFront, out stylus.clusterFrontValue))
         {
-            Debug.LogError($"MX_Ink: Error getting action name: {MX_Ink_ClusterFront}");
+            if (enableDebugLogs)
+                Debug.LogError($"MX_Ink: Error getting action name: {MX_Ink_ClusterFront}");
         }
 
         if (!OVRPlugin.GetActionStateBoolean(MX_Ink_ClusterBack, out stylus.clusterBackValue))
         {
-            Debug.LogError($"MX_Ink: Error getting action name: {MX_Ink_ClusterBack}");
+            if (enableDebugLogs)
+                Debug.LogError($"MX_Ink: Error getting action name: {MX_Ink_ClusterBack}");
         }
 
-        if (!OVRPlugin.GetActionStateBoolean(MX_Ink_ClusterFront_DoubleTap, out stylus.clusterBackDoubleTapValue))
-        {
-            Debug.LogError($"MX_Ink: Error getting action name: {MX_Ink_ClusterFront_DoubleTap}");
-        }
+        // Keep original structure, but fix the target variable names
+        OVRPlugin.GetActionStateBoolean(MX_Ink_ClusterBack_DoubleTap, out stylus.clusterBackDoubleTapValue);
 
         if (!OVRPlugin.GetActionStateBoolean(MX_Ink_ClusterBack_DoubleTap, out stylus.clusterBackDoubleTapValue))
         {
-            Debug.LogError($"MX_Ink: Error getting action name: {MX_Ink_ClusterBack_DoubleTap}");
+            if (enableDebugLogs)
+                Debug.LogError($"MX_Ink: Error getting action name: {MX_Ink_ClusterBack_DoubleTap}");
         }
 
+        // Keep dock only if your StylusInputs has this field.
+        // If StylusInputs does not have "docked", comment these 4 lines out.
         if (!OVRPlugin.GetActionStateBoolean(MX_Ink_Docked, out stylus.docked))
         {
-            Debug.LogError($"MX_Ink: Error getting action name: {MX_Ink_Docked}");
+            if (enableDebugLogs)
+                Debug.LogError($"MX_Ink: Error getting action name: {MX_Ink_Docked}");
         }
 
-        stylus.any = stylus.tipValue > 0 || stylus.clusterFrontValue ||
-                        stylus.clusterMiddleValue > 0 || stylus.clusterBackValue ||
-                        stylus.clusterBackDoubleTapValue;
+        stylus.any =
+        stylus.tipValue > 0 ||
+        stylus.clusterFrontValue ||
+        stylus.clusterMiddleValue > 0 ||
+        stylus.clusterBackValue;
 
-        tip.GetComponent<MeshRenderer>().material.color = stylus.tipValue > 0 ? activeColor : defaultColor;
-        clusterFront.GetComponent<MeshRenderer>().material.color = stylus.clusterFrontValue ? activeColor : defaultColor;
-        clusterMiddle.GetComponent<MeshRenderer>().material.color = stylus.clusterMiddleValue > 0 ? activeColor : defaultColor;
+        if (tip != null)
+            tip.GetComponent<MeshRenderer>().material.color = stylus.tipValue > 0 ? activeColor : defaultColor;
 
-        if (stylus.clusterBackValue)
+        if (clusterFront != null)
+            clusterFront.GetComponent<MeshRenderer>().material.color = stylus.clusterFrontValue ? activeColor : defaultColor;
+
+        if (clusterMiddle != null)
+            clusterMiddle.GetComponent<MeshRenderer>().material.color = stylus.clusterMiddleValue > 0 ? activeColor : defaultColor;
+
+        if (clusterBack != null)
         {
-            clusterBack.GetComponent<MeshRenderer>().material.color = stylus.clusterBackValue ? activeColor : defaultColor;
-        }
-        else
-        {
-            clusterBack.GetComponent<MeshRenderer>().material.color = stylus.clusterBackDoubleTapValue ? doubleTapActiveColor : defaultColor;
+            if (stylus.clusterBackValue)
+                clusterBack.GetComponent<MeshRenderer>().material.color = activeColor;
+            else
+                clusterBack.GetComponent<MeshRenderer>().material.color =
+                    stylus.clusterBackDoubleTapValue ? doubleTapActiveColor : defaultColor;
         }
 
 
-        if (stylus.clusterBackDoubleTapValue)
+        if (enableDebugLogs)
         {
-            TriggerHapticClick();
+            Debug.Log(
+                $"MXInk | active={stylus.isActive}, rightHand={stylus.isOnRightHand}, " +
+                $"tip={stylus.tipValue:F3}, front={stylus.clusterFrontValue}, " +
+                $"middle={stylus.clusterMiddleValue:F3}, back={stylus.clusterBackValue}, " +
+                $"posePos={stylus.inkingPose.position}, poseRot={stylus.inkingPose.rotation.eulerAngles}"
+            );
         }
-        
-        //DrawLine();
+
+        // IMPORTANT:
+        // We are intentionally NOT calling DrawLine() anymore.
+        // KanjiStylusTracer will handle drawing.
     }
 
     public void TriggerHapticPulse(float amplitude, float duration)
@@ -143,34 +178,4 @@ public class MXInkStylusHandler : MonoBehaviour
     {
         TriggerHapticPulse(hapticClickAmplitude, hapticClickDuration);
     }
-    
-    //private void DrawLine()
-    //{
-    //    if (stylus.tipValue > 0)
-    //    {
-    //        if (!isDrawing)
-    //        {
-    //            // Start a new line if not currently drawing
-    //            currentLine = new GameObject("Line").AddComponent<LineRenderer>();
-    //            currentLine.positionCount = 0;
-    //            currentLine.material = new Material(Shader.Find("Sprites/Default"));
-    //            currentLine.startColor = defaultColor;
-    //            currentLine.endColor = defaultColor;
-    //            currentLine.startWidth = 0.0025f;
-    //            currentLine.endWidth = 0.0025f;
-    //            isDrawing = true;
-    //        }
-
-    //        // Update line with current position
-    //        currentLine.positionCount++;
-    //        currentLine.SetPosition(currentLine.positionCount - 1, stylus.inkingPose.position);
-    //    }
-    //    else if (isDrawing)
-    //    {
-    //        // Stop drawing
-    //        isDrawing = false;
-    //        currentLine = null;
-    //    }
-    //}
-
 }

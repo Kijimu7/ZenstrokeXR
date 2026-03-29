@@ -10,7 +10,7 @@ public class KanjiKanjiValidator : MonoBehaviour
     public KanjiLessonController lessonController;
     public KanjiVGStrokePlayer templatePlayer;
     public KanjiVGStrokePlayer instructionPlayer;
-    public KanjiMouseTracer mouseTracer;
+    public KanjiStylusTracer mouseTracer;
     [Header("Feedback UI")]
     public TMP_Text feedbackText;
 

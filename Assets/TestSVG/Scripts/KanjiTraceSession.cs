@@ -7,7 +7,7 @@ public class KanjiTraceSession : MonoBehaviour
     public KanjiLessonController lessonController;
     public KanjiVGStrokePlayer templatePlayer;
     public KanjiVGStrokePlayer instructionPlayer;
-    public KanjiMouseTracer mouseTracer;
+    public KanjiStylusTracer mouseTracer;
 
     [Header("Validation")]
     [Range(8, 128)]
