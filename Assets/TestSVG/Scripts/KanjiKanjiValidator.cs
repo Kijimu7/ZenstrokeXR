@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-
+using UnityEngine.InputSystem;
 
 public class KanjiKanjiValidator : MonoBehaviour
 {
@@ -11,6 +11,18 @@ public class KanjiKanjiValidator : MonoBehaviour
     public KanjiVGStrokePlayer templatePlayer;
     public KanjiVGStrokePlayer instructionPlayer;
     public KanjiStylusTracer mouseTracer;
+
+
+    [Header("MX Ink Click")]
+    [Tooltip("Bind this to the MX Ink button you want to use for clicking, such as front button or middle button.")]
+    public InputActionReference mxInkClickAction;
+
+    [Tooltip("Optional: require the stylus ray to be hovering a valid UI target before allowing the click.")]
+    public bool requireHoverToClick = false;
+
+    [Tooltip("Optional: set true from a ray/hover script if you only want Check to fire while hovering the Check button.")]
+    public bool isHoveringCheckButton = false;
+
     [Header("Feedback UI")]
     public TMP_Text feedbackText;
 
@@ -30,8 +42,52 @@ public class KanjiKanjiValidator : MonoBehaviour
     [Header("Rewards")]
     public KanjiScoreManager scoreManager;
 
+    private bool lastMxInkPressed = false;
+
+    private void OnEnable()
+    {
+        if (mxInkClickAction != null && mxInkClickAction.action != null)
+            mxInkClickAction.action.Enable();
+    }
+
+    private void OnDisable()
+    {
+        if (mxInkClickAction != null && mxInkClickAction.action != null)
+            mxInkClickAction.action.Disable();
+    }
+
+    private void Update()
+    {
+        HandleMxInkClick();
+    }
+
+    private void HandleMxInkClick()
+    {
+        if (mxInkClickAction == null || mxInkClickAction.action == null)
+            return;
+
+        bool pressed = mxInkClickAction.action.IsPressed();
+
+        // rising edge only
+        if (pressed && !lastMxInkPressed)
+        {
+            if (!requireHoverToClick || isHoveringCheckButton)
+            {
+                CheckCurrentKanji();
+            }
+        }
+
+        lastMxInkPressed = pressed;
+    }
+
+    public void SetHoveringCheckButton(bool hovering)
+    {
+        isHoveringCheckButton = hovering;
+    }
+
     public void CheckCurrentKanji()
     {
+        Debug.Log("test current button");
         if (templatePlayer == null || mouseTracer == null || lessonController == null)
         {
             Debug.LogWarning("KanjiKanjiValidator: Missing references.");
@@ -51,6 +107,7 @@ public class KanjiKanjiValidator : MonoBehaviour
         if (userStrokes == null || userStrokes.Count == 0)
         {
             ShowFeedback("Try Again", Color.red);
+            ClearUserTracing();
             Debug.Log("Try Again: no user strokes found.");
             FailCurrentKanji();
             return;
@@ -59,6 +116,7 @@ public class KanjiKanjiValidator : MonoBehaviour
         if (requireExactStrokeCount && userStrokes.Count != targetStrokes.Count)
         {
             ShowFeedback("Try Again", Color.red);
+            ClearUserTracing();
             Debug.Log($"Try Again: expected {targetStrokes.Count} strokes, but user drew {userStrokes.Count}.");
             FailCurrentKanji();
             return;
@@ -69,6 +127,7 @@ public class KanjiKanjiValidator : MonoBehaviour
         if (compareCount == 0)
         {
             ShowFeedback("Try Again", Color.red);
+            ClearUserTracing();
             Debug.Log("Try Again: nothing to compare.");
             FailCurrentKanji();
             return;
@@ -83,8 +142,8 @@ public class KanjiKanjiValidator : MonoBehaviour
             if (!passed)
             {
                 ShowFeedback("Try Again", Color.red);
+                ClearUserTracing();
                 Debug.Log($"Try Again: stroke {i + 1} did not match well enough.");
-               
                 FailCurrentKanji();
                 return;
             }
@@ -93,12 +152,12 @@ public class KanjiKanjiValidator : MonoBehaviour
         if (requireExactStrokeCount && compareCount != targetStrokes.Count)
         {
             ShowFeedback("Try Again", Color.red);
+            ClearUserTracing();
             Debug.Log("Try Again: incomplete kanji.");
             FailCurrentKanji();
             return;
         }
 
-     
         Debug.Log("Complete!");
         ShowFeedback("Complete!", Color.green);
         CompleteCurrentKanji();

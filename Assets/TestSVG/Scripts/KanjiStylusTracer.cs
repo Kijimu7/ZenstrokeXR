@@ -8,9 +8,13 @@ public class KanjiStylusTracer : MonoBehaviour
     public Transform drawingRoot;
     public Transform drawingSurfacePlane;
 
-    [Header("Input")]
-    public float drawPressureThreshold = 0.01f;
-    public float maxDistanceToSurface = 0.03f;
+    [Header("Virtual Paper Contact")]
+    public float enterDrawDistance = 0.02f;
+    public float exitDrawDistance = 0.035f;
+    public float releaseGraceTime = 0.06f;
+    public float paperWidth = 0.5f;
+    public float paperHeight = 0.7f;
+
 
     [Header("Line Rendering")]
     public Material lineMaterial;
@@ -29,6 +33,7 @@ public class KanjiStylusTracer : MonoBehaviour
     private List<Vector3> currentStrokeLocal;
     private LineRenderer currentLine;
     private bool isDrawing;
+    private float lastValidContactTime = -999f;
 
     private void Awake()
     {
@@ -57,41 +62,48 @@ public class KanjiStylusTracer : MonoBehaviour
         }
 
         if (!stylusHandler.IsStylusActive)
-            return;
-
-        bool drawPressed = stylusHandler.TipValue > drawPressureThreshold;
-
-        if (enableDebugLogs)
         {
-            Debug.Log($"KanjiStylusTracer | active={stylusHandler.IsStylusActive}, tip={stylusHandler.TipValue:F3}, drawPressed={drawPressed}");
+            if (isDrawing)
+                EndStroke();
+            return;
         }
 
         if (!TryGetProjectedPoint(out Vector3 projectedWorldPoint, out float surfaceDistance))
         {
-            if (isDrawing && !drawPressed)
+            if (isDrawing)
                 EndStroke();
-
             return;
         }
 
-        bool nearSurface = surfaceDistance <= maxDistanceToSurface;
+        bool onPaper = IsPointOnPaper(projectedWorldPoint);
+
+        bool shouldStart = onPaper && surfaceDistance <= enterDrawDistance;
+        bool shouldContinue = onPaper && surfaceDistance <= exitDrawDistance;
 
         if (enableDebugLogs)
         {
-            Debug.Log($"KanjiStylusTracer | nearSurface={nearSurface}, surfaceDistance={surfaceDistance:F4}, projected={projectedWorldPoint}");
+            Debug.Log(
+                $"KanjiStylusTracer | onPaper={onPaper}, surfaceDistance={surfaceDistance:F4}, " +
+                $"shouldStart={shouldStart}, shouldContinue={shouldContinue}, isDrawing={isDrawing}"
+            );
         }
 
-        if (!isDrawing && drawPressed && nearSurface)
+        if (!isDrawing && shouldStart)
         {
             BeginStroke(projectedWorldPoint);
+            lastValidContactTime = Time.time;
         }
-        else if (isDrawing && drawPressed && nearSurface)
+        else if (isDrawing && shouldContinue)
         {
             ContinueStroke(projectedWorldPoint);
+            lastValidContactTime = Time.time;
         }
-        else if (isDrawing && (!drawPressed || !nearSurface))
+        else if (isDrawing)
         {
-            EndStroke();
+            bool graceExpired = Time.time - lastValidContactTime > releaseGraceTime;
+
+            if (graceExpired)
+                EndStroke();
         }
     }
 
@@ -161,12 +173,21 @@ public class KanjiStylusTracer : MonoBehaviour
 
         Plane plane = new Plane(planeNormal, planePoint);
 
-        surfaceDistance = Mathf.Abs(plane.GetDistanceToPoint(tipWorld));
-        projectedWorldPoint = tipWorld - planeNormal * plane.GetDistanceToPoint(tipWorld);
+        float signedDistance = plane.GetDistanceToPoint(tipWorld);
+        surfaceDistance = Mathf.Abs(signedDistance);
+        projectedWorldPoint = tipWorld - planeNormal * signedDistance;
 
-        Debug.DrawRay(tipWorld, -planeNormal * surfaceDistance, Color.green);
+        Debug.DrawRay(tipWorld, -planeNormal * signedDistance, Color.green);
 
         return true;
+    }
+
+    private bool IsPointOnPaper(Vector3 worldPoint)
+    {
+        Vector3 local = drawingSurfacePlane.InverseTransformPoint(worldPoint);
+
+        return local.x >= -paperWidth * 0.5f && local.x <= paperWidth * 0.5f &&
+               local.y >= -paperHeight * 0.5f && local.y <= paperHeight * 0.5f;
     }
 
     private void BeginStroke(Vector3 worldPoint)
