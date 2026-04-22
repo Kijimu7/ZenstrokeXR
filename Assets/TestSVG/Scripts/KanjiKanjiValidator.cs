@@ -3,6 +3,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
+using System.Collections;
 
 public class KanjiKanjiValidator : MonoBehaviour
 {
@@ -56,29 +57,29 @@ public class KanjiKanjiValidator : MonoBehaviour
             mxInkClickAction.action.Disable();
     }
 
-    private void Update()
-    {
-        HandleMxInkClick();
-    }
+    //private void Update()
+    //{
+    //    HandleMxInkClick();
+    //}
 
-    private void HandleMxInkClick()
-    {
-        if (mxInkClickAction == null || mxInkClickAction.action == null)
-            return;
+    //private void HandleMxInkClick()
+    //{
+    //    if (mxInkClickAction == null || mxInkClickAction.action == null)
+    //        return;
 
-        bool pressed = mxInkClickAction.action.IsPressed();
+    //    bool pressed = mxInkClickAction.action.IsPressed();
 
-        // rising edge only
-        if (pressed && !lastMxInkPressed)
-        {
-            if (!requireHoverToClick || isHoveringCheckButton)
-            {
-                CheckCurrentKanji();
-            }
-        }
+    //    // rising edge only
+    //    if (pressed && !lastMxInkPressed)
+    //    {
+    //        if (!requireHoverToClick || isHoveringCheckButton)
+    //        {
+    //            CheckCurrentKanji();
+    //        }
+    //    }
 
-        lastMxInkPressed = pressed;
-    }
+    //    lastMxInkPressed = pressed;
+    //}
 
     public void SetHoveringCheckButton(bool hovering)
     {
@@ -87,6 +88,7 @@ public class KanjiKanjiValidator : MonoBehaviour
 
     public void CheckCurrentKanji()
     {
+        Debug.Log("CheckCurrentKanji called\n" + System.Environment.StackTrace);
         Debug.Log("test current button");
         if (templatePlayer == null || mouseTracer == null || lessonController == null)
         {
@@ -318,12 +320,37 @@ public class KanjiKanjiValidator : MonoBehaviour
         return result;
     }
 
-    private void ShowFeedback(string message, Color color)
+    private Coroutine feedbackRoutine;
+
+    private void ShowFeedback(string message, Color color, float duration = 1.5f)
     {
+        Debug.Log("ShowFeedback called with: " + message);
+
         if (feedbackText == null)
             return;
 
+        // Stop previous reset if still running
+        if (feedbackRoutine != null)
+            StopCoroutine(feedbackRoutine);
+
         feedbackText.text = message;
         feedbackText.color = color;
+
+        // Only auto-clear for "Try Again"
+        if (message == "Try Again")
+        {
+            feedbackRoutine = StartCoroutine(ClearFeedbackAfterDelay(duration));
+        }
     }
+
+    private IEnumerator ClearFeedbackAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        if (feedbackText != null)
+        {
+            feedbackText.text = "";
+        }
+    }
+
 }

@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::KanjiGradeDatabase
   grades:
   - gradeName: Grade 1
-    kanjiCharacters: "\u4E00\u4E09\u6728"
+    kanjiCharacters: "\u4E00\u4E8C\u4E09"

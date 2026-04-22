@@ -120,6 +120,39 @@ public class MXInkUIPointer : MonoBehaviour
         currentHover = null;
     }
 
+    //private void TryClick(GameObject buttonObject)
+    //{
+    //    if (buttonObject == null)
+    //    {
+    //        Debug.Log("[MXInkUIPointer] TryClick called with null buttonObject.");
+    //        return;
+    //    }
+
+    //    Button btn = buttonObject.GetComponent<Button>();
+    //    if (btn == null)
+    //    {
+    //        Debug.Log($"[MXInkUIPointer] Resolved object {buttonObject.name}, but no Button component exists.");
+    //        return;
+    //    }
+
+    //    if (!btn.interactable)
+    //    {
+    //        Debug.Log($"[MXInkUIPointer] Button {buttonObject.name} is not interactable.");
+    //        return;
+    //    }
+
+    //    if (EventSystem.current != null)
+    //    {
+    //        PointerEventData eventData = new PointerEventData(EventSystem.current);
+    //        ExecuteEvents.Execute(buttonObject, eventData, ExecuteEvents.pointerDownHandler);
+    //        ExecuteEvents.Execute(buttonObject, eventData, ExecuteEvents.pointerClickHandler);
+    //        ExecuteEvents.Execute(buttonObject, eventData, ExecuteEvents.pointerUpHandler);
+    //    }
+
+    //    btn.onClick.Invoke();
+    //    Debug.Log($"[MXInkUIPointer] Button clicked: {buttonObject.name}");
+    //}
+
     private void TryClick(GameObject buttonObject)
     {
         if (buttonObject == null)
@@ -145,11 +178,10 @@ public class MXInkUIPointer : MonoBehaviour
         {
             PointerEventData eventData = new PointerEventData(EventSystem.current);
             ExecuteEvents.Execute(buttonObject, eventData, ExecuteEvents.pointerDownHandler);
-            ExecuteEvents.Execute(buttonObject, eventData, ExecuteEvents.pointerClickHandler);
             ExecuteEvents.Execute(buttonObject, eventData, ExecuteEvents.pointerUpHandler);
+            ExecuteEvents.Execute(buttonObject, eventData, ExecuteEvents.pointerClickHandler);
         }
 
-        btn.onClick.Invoke();
         Debug.Log($"[MXInkUIPointer] Button clicked: {buttonObject.name}");
     }
 
